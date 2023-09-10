@@ -40,7 +40,7 @@ fn get_header_files<P: AsRef<Path>>(dir: P) -> Vec<PathBuf> {
 }
 
 fn find_libgcc_folder() -> impl std::fmt::Display {
-    fs::read_dir("/opt/devkitpro/devkitA64/lib/gcc/aarch64-none-elf")
+    fs::read_dir("C:/devkitpro/devkitA64/lib/gcc/aarch64-none-elf")
         .unwrap()
         .filter_map(|entry| {
             let entry = entry.unwrap();
@@ -65,7 +65,7 @@ fn main() {
     // TODO: Get it to work with MSVC too?
     let headers_path = Path::new("src/cpp/include");
     let efl_headers_path = Path::new("src/cpp/libs/libeiffel/include");
-    let dkp_headers_path = Path::new("/opt/devkitpro/libnx/include");
+    let dkp_headers_path = Path::new("C:/devkitpro/libnx/include");
 
     println!("cargo:rerun-if-changed=build.rs");
     let source_files = get_cpp_files("src/cpp/source/");
@@ -76,7 +76,7 @@ fn main() {
         println!("cargo:rerun-if-changed={}", file.display());
     }
     // Needed to find stdc++ and gcc
-    println!("cargo:rustc-link-search=/opt/devkitpro/devkitA64/aarch64-none-elf/lib/pic");
+    println!("cargo:rustc-link-search=C:/devkitpro/devkitA64/aarch64-none-elf/lib/pic");
     println!("cargo:rustc-link-search={}", find_libgcc_folder());
     // Static libraries
     println!("cargo:rustc-link-lib=static=stdc++");
@@ -88,8 +88,8 @@ fn main() {
     // let bindings = bindgen::Builder::default()
     // .clang_arg("-std=c++17")
     // .clang_arg("-Fsrc/cpp/include/")
-    // .clang_arg("-F/opt/devkitpro/devkitA64/aarch64-none-elf/include/c++/10.2.0")
-    // .clang_arg("-F/opt/devkitpro/devkitA64/aarch64-none-elf/include/c++/10.2.0/aarch64-none-elf")
+    // .clang_arg("-FC:/devkitpro/devkitA64/aarch64-none-elf/include/c++/10.2.0")
+    // .clang_arg("-FC:/devkitpro/devkitA64/aarch64-none-elf/include/c++/10.2.0/aarch64-none-elf")
     // .enable_cxx_namespaces()
     // .layout_tests(false)
     // .header("src/cpp/include/wrapper.hpp")
@@ -97,7 +97,7 @@ fn main() {
     // .expect("Unable to generate bindings");
 
     cc::Build::new()
-        .compiler("/opt/devkitpro/devkitA64/bin/aarch64-none-elf-g++")
+        .compiler("C:/devkitpro/devkitA64/bin/aarch64-none-elf-g++")
         .cpp(true)
         .shared_flag(true)
         .static_flag(true)
