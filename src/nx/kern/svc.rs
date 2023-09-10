@@ -2,6 +2,7 @@ use std::mem::MaybeUninit;
 use crate::nx::result;
 use crate::nx::result::NxResult;
 use crate::nx::kern::types::{*};
+use std::arch::asm;
 
 macro_rules! check_res {
     ($res:expr, $out:expr) => {

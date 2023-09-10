@@ -1,3 +1,5 @@
+use std::arch::asm;
+
 macro_rules! reg {
     ( $func_name:ident, $register_name:ident ) => {
             pub fn $func_name() -> u64 {

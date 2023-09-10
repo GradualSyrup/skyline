@@ -12,6 +12,7 @@ mod api;
 mod init;
 mod pointer_iter;
 mod tcp_init;
+mod And64InlineHook;
 //mod loggers;
 
 //pub use loggers::{Logger, SdLogger, KernelLogger};

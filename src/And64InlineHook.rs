@@ -1,5 +1,5 @@
 use std::mem::size_of;
-use std::ptr::null;
+use std::ptr::null_mut;
 
 // TODO: deal with these imports being missing in rust
 
@@ -9,9 +9,9 @@ use std::ptr::null;
 // #include "skyline/inlinehook/And64InlineHook.hpp"
 // #include "skyline/utils/cpputils.hpp"
 
-static A64_MAX_INSTRUCTIONS: usize = 5;
-static A64_MAX_REFERENCES: usize = (A64_MAX_INSTRUCTIONS * 2);
-static A64_NOP: usize = 0xd503201fu;
+const A64_MAX_INSTRUCTIONS: usize = 5;
+const A64_MAX_REFERENCES: usize = A64_MAX_INSTRUCTIONS * 2;
+const A64_NOP: usize = 0xd503201f;
 
 type Instruction = &'static mut &'static mut u32;
 
@@ -48,13 +48,13 @@ impl Context {
 
     #[inline]
     pub fn get_ref_ins_index(mut self, absolute_addr: u64) -> usize {
-        ((absolute_addr - self.basep) / sizeof(u64)) as usize
+        (absolute_addr - self.basep) as usize / size_of::<u64>()
     }
 
     #[inline]
     pub fn get_and_set_current_index(mut self, inp: &mut u64, outp: &mut u64) -> usize { // was u32s?
-        current_idx = self.get_ref_ins_index(*inp);
-        this.dat[current_idx].insp = outp;
+        let current_idx = self.get_ref_ins_index(*inp);
+        self.dat[current_idx].insp = outp;
         current_idx
     }
 
@@ -82,9 +82,9 @@ impl Context {
                 break;
             }
             *(f.bprw) =
-                *(f.bprx) | ((((self.dat[idx].ins - *(f.bprx)) as u32 >> 2) << f.ls) & f.ad);
-            f.bprw = null();
-            f.bprx = null();
+                *(f.bprx) | ((((self.dat[idx].ins as u32 - *(f.bprx)) >> 2) << f.ls) & f.ad);
+            f.bprw = null_mut();
+            f.bprx = null_mut();
         }
     }
 }
