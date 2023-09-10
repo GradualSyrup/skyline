@@ -2,6 +2,7 @@
 #![feature(new_uninit)]
 #![feature(option_result_contains)]
 #![feature(result_contains_err)]
+#![feature(pointer_byte_offsets)]
 
 #[macro_use]
 extern crate bitflags;
@@ -13,6 +14,7 @@ mod init;
 mod pointer_iter;
 mod tcp_init;
 mod And64InlineHook;
+
 //mod loggers;
 
 //pub use loggers::{Logger, SdLogger, KernelLogger};
