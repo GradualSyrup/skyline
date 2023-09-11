@@ -1,18 +1,18 @@
 #![feature(proc_macro_hygiene)]
 #![feature(new_uninit)]
-#![feature(option_result_contains)]
-#![feature(result_contains_err)]
+// #![feature(option_result_contains)]
+// #![feature(result_contains_err)]
 #![feature(pointer_byte_offsets)]
 
-#[macro_use]
-extern crate bitflags;
-#[macro_use]
-extern crate lazy_static;
-pub mod nx;
-mod api;
-mod init;
-mod pointer_iter;
-mod tcp_init;
+// #[macro_use]
+// extern crate bitflags;
+// #[macro_use]
+// extern crate lazy_static;
+//pub mod nx;
+//mod api;
+//mod init;
+//mod pointer_iter;
+//mod tcp_init;
 mod And64InlineHook;
 
 //mod loggers;
@@ -46,7 +46,7 @@ fn main() {
     println!("[skyline] entered `main`");
 
     initialize_process();
-    tcp_init::init_tcp();
+    //tcp_init::init_tcp();
 
     println!("[skyline] Process initialization complete");
 

@@ -54,7 +54,7 @@ impl Context {
     #[inline]
     pub unsafe fn get_and_set_current_index(mut self, inp: *mut u32, outp: *mut u32) -> usize { // was u32s?
         let current_idx = self.get_ref_ins_index(inp as u64);
-        self.dat[current_idx].insp = outp;
+        self.dat[current_idx].insp = std::mem::transmute::<*mut u32, *const u64>(outp);
         current_idx
     }
 
@@ -93,70 +93,67 @@ impl Context {
 
 unsafe fn fix_branch_imm(inprwp: Instruction, inprxp: Instruction, outprw: Instruction, outprx: Instruction, ctxp: &mut Context) -> bool {
     let mbits: u32 = 6u32;
-    let mask: i64 = 0xfc000000u32;   // 0b11111100000000000000000000000000
+    let mask: i64 = 0xfc000000u32 as i64;   // 0b11111100000000000000000000000000
     let rmask: u32 = 0x03ffffffu32;  // 0b00000011111111111111111111111111
     let op_b: u32 = 0x14000000u32;   // "b"  ADDR_PCREL26
     let op_bl: u32 = 0x94000000u32;  // "bl" ADDR_PCREL26
     let ins: u32 = *(*inprwp);
     let opc: i64 = ins as i64 & mask;
     
-    match opc {
-        op_b | op_bl => {
-            let current_idx: usize = ctxp.get_and_set_current_index(*inprxp, *outprx);
-            let absolute_addr = (*inprxp).byte_add((ins << mbits) >> (mbits - 2)); // sign-extended
-            let mut new_pc_offset: i64 = (absolute_addr.offset_from(*outprx)) as i64 >> 2; // shifted
-            let special_fix_type: bool = ctxp.is_in_fixing_range(absolute_addr as u64);
-            // whether the branch should be converted to absolute jump
-            if !special_fix_type && new_pc_offset.abs() >= (rmask >> 1) {
-                let b_aligned: bool = (((*outprx).byte_add(2)) & 7) == 0;
-                if opc == op_b {
-                    if !b_aligned {
-                        (*outprw)[0] = A64_NOP;
-                        (*outprx).byte_add(1);
-                        ctxp.reset_current_ins(current_idx, *outprx);
-                        (*outprw).byte_add(1);
-                    }                              // if
-                    (*outprw)[0] = 0x58000051u32;  // LDR X17, #0x8
-                    (*outprw)[1] = 0xd61f0220u32;  // BR X17
-                    memcpy(*outprw + 2, &absolute_addr, size_of::<*mut u32>());
-                    (*outprx).byte_add(4);
-                    (*outprw).byte_add(4);
-                } else {
-                    if b_aligned {
-                        (*outprw)[0] = A64_NOP;
-                        (*outprx).byte_add(1);
-                        ctxp.reset_current_ins(current_idx, *outprx);
-                        (*outprw).byte_add(1);
-                    }                              // if
-                    (*outprw)[0] = 0x58000071u32;  // LDR X17, #12
-                    (*outprw)[1] = 0x1000009eu32;  // ADR X30, #16
-                    (*outprw)[2] = 0xd61f0220u32;  // BR X17
-                    memcpy(*outprw + 3, &absolute_addr, size_of::<*mut u32>());
-                    (*outprw).byte_add(5);
-                    (*outprx).byte_add(5);
-                }  // if
+    if opc == op_b || opc == op_bl {
+        let current_idx: usize = ctxp.get_and_set_current_index(*inprxp, *outprx);
+        let absolute_addr = (*inprxp).byte_add(((ins << mbits) >> (mbits - 2)) as usize); // sign-extended
+        let mut new_pc_offset: i64 = (absolute_addr.offset_from(*outprx)) as i64 >> 2; // shifted
+        let special_fix_type: bool = ctxp.is_in_fixing_range(absolute_addr as u64);
+        // whether the branch should be converted to absolute jump
+        if !special_fix_type && new_pc_offset.abs() >= (rmask >> 1) {
+            let b_aligned: bool = (((*outprx).byte_add(2)) & 7) == 0;
+            if opc == op_b {
+                if !b_aligned {
+                    (*outprw)[0] = A64_NOP;
+                    (*outprx).byte_add(1);
+                    ctxp.reset_current_ins(current_idx, *outprx);
+                    (*outprw).byte_add(1);
+                }                              // if
+                (*outprw)[0] = 0x58000051u32;  // LDR X17, #0x8
+                (*outprw)[1] = 0xd61f0220u32;  // BR X17
+                memcpy((*outprw).byte_add(2), &absolute_addr, size_of::<*mut u32>());
+                (*outprx).byte_add(4);
+                (*outprw).byte_add(4);
             } else {
-                if special_fix_type {
-                    let ref_idx: usize = ctxp.get_ref_ins_index(absolute_addr);
-                    if ref_idx <= current_idx {
-                        new_pc_offset = (ctxp.dat[ref_idx].ins - (*outprx) as i64) >> 2;
-                    } else {
-                        ctxp.insert_fix_map(ref_idx, *outprw, *outprx, 0u32, rmask);
-                        new_pc_offset = 0;
-                    }  // if
-                }      // if
-
-                (*outprw)[0] = opc | (new_pc_offset & -mask);
-                (*outprw).byte_add(1);
-                (*outprx).byte_add(1);
+                if b_aligned {
+                    (*outprw)[0] = A64_NOP;
+                    (*outprx).byte_add(1);
+                    ctxp.reset_current_ins(current_idx, *outprx);
+                    (*outprw).byte_add(1);
+                }                              // if
+                (*outprw)[0] = 0x58000071u32;  // LDR X17, #12
+                (*outprw)[1] = 0x1000009eu32;  // ADR X30, #16
+                (*outprw)[2] = 0xd61f0220u32;  // BR X17
+                memcpy((*outprw).byte_add(3), &absolute_addr, size_of::<*mut u32>());
+                (*outprw).byte_add(5);
+                (*outprx).byte_add(5);
             }  // if
+        } else {
+            if special_fix_type {
+                let ref_idx: usize = ctxp.get_ref_ins_index(absolute_addr);
+                if ref_idx <= current_idx {
+                    new_pc_offset = (ctxp.dat[ref_idx].ins - (*outprx) as i64) >> 2;
+                } else {
+                    ctxp.insert_fix_map(ref_idx, *outprw, *outprx, 0u32, rmask);
+                    new_pc_offset = 0;
+                }  // if
+            }      // if
 
-            (*inprxp).byte_add(1);
-            (*inprwp).byte_add(1);
-            ctxp.process_fix_map(current_idx);
-            return true;
-        }
-        _ => (),
+            (*outprw)[0] = opc | (new_pc_offset & -mask);
+            (*outprw).byte_add(1);
+            (*outprx).byte_add(1);
+        }  // if
+
+        (*inprxp).byte_add(1);
+        (*inprwp).byte_add(1);
+        ctxp.process_fix_map(current_idx);
+        return true;
     }
     false
 }
