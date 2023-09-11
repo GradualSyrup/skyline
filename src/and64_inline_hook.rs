@@ -19,6 +19,7 @@ type Instruction = &'static mut *mut u32;
 
 // TODO: The typing is probably getting destroyed here from what it was in C++
 //  all of the .add() functions and recasting needs to be double checked when this is testable
+//  so if we get down to this point, fix_branch_imm and all the types below need to be rewritten
 
 #[repr(C)]
 #[derive(Clone, Copy,)]
