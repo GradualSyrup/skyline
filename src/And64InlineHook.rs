@@ -1,5 +1,5 @@
 use std::mem::size_of;
-use std::ptr::null_mut;
+use std::ptr::{null_mut, copy};
 
 // TODO: deal with these imports being missing in rust
 
@@ -11,13 +11,14 @@ use std::ptr::null_mut;
 
 const A64_MAX_INSTRUCTIONS: usize = 5;
 const A64_MAX_REFERENCES: usize = A64_MAX_INSTRUCTIONS * 2;
-const A64_NOP: usize = 0xd503201f;
+const A64_NOP: u32 = 0xd503201f;
 
 type Instruction = &'static mut *mut u32;
 
 // TODO: may need to make structs/struct fields mutable
 
 #[repr(C)]
+#[derive(Clone, Copy,)]
 pub struct FixInfo {
     bprx: *mut u32,
     bprw: *mut u32,
@@ -26,6 +27,7 @@ pub struct FixInfo {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy,)]
 pub struct InstructionsInfo {
     insu: u64,
     ins: i64,
@@ -34,6 +36,7 @@ pub struct InstructionsInfo {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy,)]
 pub struct Context {
     basep: u64,
     endp: u64,
@@ -100,43 +103,45 @@ unsafe fn fix_branch_imm(inprwp: Instruction, inprxp: Instruction, outprw: Instr
     let ins: u32 = *(*inprwp);
     let opc: i64 = ins as i64 & mask;
     
-    if opc == op_b || opc == op_bl {
+    if opc == op_b.into() || opc == op_bl.into() {
         let current_idx: usize = ctxp.get_and_set_current_index(*inprxp, *outprx);
-        let absolute_addr = (*inprxp).byte_add(((ins << mbits) >> (mbits - 2)) as usize); // sign-extended
+        let absolute_addr = (*inprxp).add(((ins << mbits) >> (mbits - 2)) as usize); // sign-extended
         let mut new_pc_offset: i64 = (absolute_addr.offset_from(*outprx)) as i64 >> 2; // shifted
         let special_fix_type: bool = ctxp.is_in_fixing_range(absolute_addr as u64);
         // whether the branch should be converted to absolute jump
-        if !special_fix_type && new_pc_offset.abs() >= (rmask >> 1) {
-            let b_aligned: bool = (((*outprx).byte_add(2)) & 7) == 0;
-            if opc == op_b {
+        if !special_fix_type && new_pc_offset.abs() >= (rmask >> 1).into() {
+            let b_aligned: bool = (((*outprx).add(2)) as u64 & 7) == 0;
+            if opc == op_b.into() {
                 if !b_aligned {
-                    (*outprw)[0] = A64_NOP;
-                    (*outprx).byte_add(1);
-                    ctxp.reset_current_ins(current_idx, *outprx);
-                    (*outprw).byte_add(1);
+                    *(*outprw).offset(0) = A64_NOP;
+                    *outprx = (*outprx).add(1);
+                    ctxp.reset_current_ins(current_idx,&mut (*(*outprx) as u64));
+                    *outprw= (*outprw).add(1);
                 }                              // if
-                (*outprw)[0] = 0x58000051u32;  // LDR X17, #0x8
-                (*outprw)[1] = 0xd61f0220u32;  // BR X17
-                memcpy((*outprw).byte_add(2), &absolute_addr, size_of::<*mut u32>());
-                (*outprx).byte_add(4);
-                (*outprw).byte_add(4);
+                *(*outprw).offset(0) = 0x58000051u32;  // LDR X17, #0x8
+                *(*outprw).offset(1) = 0xd61f0220u32;  // BR X17
+                //memcpy((*outprw).add(2), &absolute_addr, size_of::<*mut u32>());
+                copy(absolute_addr, (*outprw).add(2), size_of::<*mut u32>());
+                *outprx = (*outprx).add(4);
+                *outprw= (*outprw).add(4);
             } else {
                 if b_aligned {
-                    (*outprw)[0] = A64_NOP;
-                    (*outprx).byte_add(1);
-                    ctxp.reset_current_ins(current_idx, *outprx);
-                    (*outprw).byte_add(1);
+                    *(*outprw).offset(0) = A64_NOP;
+                    *outprx = (*outprx).add(1);
+                    ctxp.reset_current_ins(current_idx, &mut (*(*outprx) as u64));
+                    *outprw = (*outprw).add(1);
                 }                              // if
-                (*outprw)[0] = 0x58000071u32;  // LDR X17, #12
-                (*outprw)[1] = 0x1000009eu32;  // ADR X30, #16
-                (*outprw)[2] = 0xd61f0220u32;  // BR X17
-                memcpy((*outprw).byte_add(3), &absolute_addr, size_of::<*mut u32>());
-                (*outprw).byte_add(5);
-                (*outprx).byte_add(5);
+                *(*outprw).offset(0) = 0x58000071u32;  // LDR X17, #12
+                *(*outprw).offset(1) = 0x1000009eu32;  // ADR X30, #16
+                *(*outprw).offset(2) = 0xd61f0220u32;  // BR X17
+                //memcpy((*outprw).add(3), &absolute_addr, size_of::<*mut u32>());
+                copy(absolute_addr, (*outprw).add(3), size_of::<*mut u32>());
+                *outprw = (*outprw).add(5);
+                *outprx = (*outprx).add(5);
             }  // if
         } else {
             if special_fix_type {
-                let ref_idx: usize = ctxp.get_ref_ins_index(absolute_addr);
+                let ref_idx: usize = ctxp.get_ref_ins_index(absolute_addr as u64);
                 if ref_idx <= current_idx {
                     new_pc_offset = (ctxp.dat[ref_idx].ins - (*outprx) as i64) >> 2;
                 } else {
@@ -145,13 +150,13 @@ unsafe fn fix_branch_imm(inprwp: Instruction, inprxp: Instruction, outprw: Instr
                 }  // if
             }      // if
 
-            (*outprw)[0] = opc | (new_pc_offset & -mask);
-            (*outprw).byte_add(1);
-            (*outprx).byte_add(1);
+            *(*outprw).offset(0) = (opc | (new_pc_offset & -mask)) as u32;
+            *outprw = (*outprw).add(1);
+            *outprx = (*outprx).add(1);
         }  // if
 
-        (*inprxp).byte_add(1);
-        (*inprwp).byte_add(1);
+        *inprxp= (*inprxp).add(1);
+        *inprwp= (*inprwp).add(1);
         ctxp.process_fix_map(current_idx);
         return true;
     }
