@@ -1,5 +1,4 @@
 use skyline::nn;
-use skyline::libc;
 use std::alloc::{alloc, Layout};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -19,7 +18,7 @@ pub fn init_tcp() {
         let pool = alloc(Layout::from_size_align(POOL_SIZE, POOL_ALIGN).unwrap());
 
         nn::socket::Initialize(
-            pool as *mut libc::c_void,
+            pool as *mut u8,
             POOL_SIZE as _,
             ALLOC_POOL_SIZE as _,
             CONCURENCY_LIMIT as _,

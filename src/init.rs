@@ -1,4 +1,4 @@
-use crate::{pointer_iter::StartEndArrayIterator};
+use crate::pointer_iter::StartEndArrayIterator;
 
 type PreInitFn = extern "C" fn();
 type InitFn = extern "C" fn();
@@ -19,6 +19,7 @@ use crate::nx::kern::svc;
 use crate::nx::util::cur_proc_handle;
 
 #[no_mangle]
+#[allow(unreachable_code)]
 unsafe extern "C" fn __custom_init() {
     for preinit_func in StartEndArrayIterator::new(&__preinit_array_start__, &__preinit_array_end__) {
         preinit_func();
