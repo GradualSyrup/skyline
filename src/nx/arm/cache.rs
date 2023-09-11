@@ -1,4 +1,5 @@
 use super::register;
+use std::arch::asm;
 
 pub fn flush_data(mut address: usize, size: usize) {
     let mut cache_line_words = register::get_cache_type();

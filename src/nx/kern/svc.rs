@@ -1,4 +1,5 @@
 use std::mem::MaybeUninit;
+use std::arch::asm;
 use crate::nx::result;
 use crate::nx::result::NxResult;
 use crate::nx::kern::types::{*};
