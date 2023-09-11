@@ -17,6 +17,9 @@ type Instruction = &'static mut *mut u32;
 
 // TODO: may need to make structs/struct fields mutable
 
+// TODO: The typing is probably getting destroyed here from what it was in C++
+//  all of the .add() functions and recasting needs to be double checked when this is testable
+
 #[repr(C)]
 #[derive(Clone, Copy,)]
 pub struct FixInfo {
