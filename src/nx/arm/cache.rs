@@ -16,7 +16,9 @@ pub fn flush_data(mut address: usize, size: usize) {
     let end = address + size;
     while address < end {
         unsafe {
-            asm!("dc cvac, $0" :: "x"(address));
+            //switched using https://github.com/MrElectrify/ntapi/commit/0634d28b1dacb9cdad9e3968907926b0672dafea
+            //llvm_asm!("dc cvac, $0" :: "x"(address));
+            asm!("dc cvac, {0}", in(reg) address);
         }
         address += cache_line_size;
     }
@@ -41,7 +43,8 @@ pub fn invalidate_instruction(mut address: usize, size: usize) {
     let end = address + size;
     while address < end  {
         unsafe {
-            asm!("ic ivau, $0" :: "x"(address));
+            //llvm_asm!("ic ivau, $0" :: "x"(address));
+            asm!("ic ivau, {0}", in(reg) address);
         }
         address += cache_line_size;
     }

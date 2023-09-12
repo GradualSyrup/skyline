@@ -8,7 +8,7 @@ macro_rules! reg {
                 unsafe {
                     // changed to match https://github.com/rust-lang/stdarch/pull/1052/files#diff-6df5bb0aa0a043cbfbc1e4a55a283c394fd2d216d9a9dbc709745d11c08f8d01
                     // also used https://github.com/rust-lang/rfcs/blob/master/text/2873-inline-asm.md
-                    // asm!(
+                    // llvm_asm!(
                     //     concat!("mrs x0, ", stringify!($register_name))
                     //     : "={x0}"(ret)
                     // )
