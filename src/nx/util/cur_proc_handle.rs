@@ -43,7 +43,7 @@ fn get_proc_handle() -> Handle {
     let message = [ 0x00000000u32, 0x80000000u32, 0x00000002u32, Handle::CURR_PROC.into() ];
     unsafe {
         let server_tls = std::slice::from_raw_parts_mut(register::get_tls() as *mut u32, 0x10/4);
-        &server_tls[..message.len()].copy_from_slice(&message);
+        server_tls[..message.len()].copy_from_slice(&message);
     }
 
     /* Send message to client. */
