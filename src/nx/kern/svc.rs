@@ -16,7 +16,7 @@ macro_rules! check_res {
 }
 
 pub fn set_heap_size(size: usize) -> Result<usize, NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
     let out: usize;
 
     unsafe {
@@ -39,7 +39,7 @@ pub fn set_heap_size(size: usize) -> Result<usize, NxResult> {
 }
 
 pub fn set_memory_permission(address: usize, size: usize, permission: MemoryPermission) -> Result<(), NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
 
     unsafe {
         // llvm_asm!(
@@ -62,7 +62,7 @@ pub fn set_memory_permission(address: usize, size: usize, permission: MemoryPerm
 }
 
 pub fn set_memory_attribute(address: usize, size: usize, mask: u32, value: u32) -> Result<(), NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
 
     unsafe {
         // llvm_asm!(
@@ -86,7 +86,7 @@ pub fn set_memory_attribute(address: usize, size: usize, mask: u32, value: u32) 
 }
 
 pub fn map_memory(dst_address: usize, src_address: usize, size: usize) -> Result<(), NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
 
     unsafe {
         // llvm_asm!(
@@ -109,7 +109,7 @@ pub fn map_memory(dst_address: usize, src_address: usize, size: usize) -> Result
 }
 
 pub fn unmap_memory(dst_address: usize, src_address: usize, size: usize) -> Result<(), NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
 
     unsafe {
         // llvm_asm!(
@@ -137,13 +137,13 @@ pub struct QueryMemoryResult {
 }
 
 pub fn query_memory(address: usize) -> Result<QueryMemoryResult, NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
     let meminfo = MaybeUninit::<MemoryInfo>::uninit();
 
     let svcres = unsafe {
         
         let meminfo_ptr = meminfo.as_ptr();
-        let pageinfo: PageInfo;
+        let mut pageinfo = PageInfo { flags:0 };
         // llvm_asm!(
         //     "
         //     svc 0x6
@@ -179,7 +179,7 @@ pub fn exit_process() -> ! {
 }
 
 pub fn close_handle(handle: Handle) -> Result<(), NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
 
     unsafe {
         // llvm_asm!(
@@ -204,7 +204,7 @@ pub fn wait_synchronization_single(handle: Handle, timeout: i32) -> Result<u32, 
 }
 
 pub fn wait_synchronization(handles: &Vec<Handle>, timeout: i32) -> Result<u32, NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
     let idx: u32;
 
     let handles_ptr = handles.as_ptr();
@@ -231,7 +231,7 @@ pub fn wait_synchronization(handles: &Vec<Handle>, timeout: i32) -> Result<u32, 
 }
 
 pub fn send_sync_request(handle: Handle) -> Result<(), NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
 
     unsafe {
         // llvm_asm!(
@@ -262,7 +262,7 @@ pub fn break_() -> ! {
 }
 
 pub fn output_debug_string(string: &str) -> Result<(), NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
 
     let ptr = string.as_ptr() as usize;
     let size = string.len() as usize;
@@ -287,7 +287,7 @@ pub fn output_debug_string(string: &str) -> Result<(), NxResult> {
 }
 
 pub fn get_info(info_type: InfoType, handle: Handle, sub_type: u64) -> Result<u64, NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
     let info: u64;
 
     unsafe {
@@ -318,12 +318,12 @@ pub struct CreateSessionResult {
 }
 
 pub fn create_session(is_light: bool, name: u64) -> Result<CreateSessionResult, NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
 
     let svcres = unsafe {
         
-        let server: Handle;
-        let client: Handle;
+        let mut server: Handle = Handle(0);
+        let mut client: Handle = Handle(0);
         // llvm_asm!(
         //     "
         //     svc 0x40
@@ -350,7 +350,7 @@ pub fn create_session(is_light: bool, name: u64) -> Result<CreateSessionResult, 
 }
 
 pub fn reply_and_receive(handle_idx: &mut i32, handles: Vec<Handle>, reply_target_session_handle: Handle, timeout: u64) -> Result<(),NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
 
     /* Kernel may or may not initialize this value depending on result. We initialize as -1, as it would under some error scenarios. */
     #[allow(unused_assignments)]
@@ -382,8 +382,8 @@ pub fn reply_and_receive(handle_idx: &mut i32, handles: Vec<Handle>, reply_targe
 }
 
 pub fn create_code_memory(address: usize, size: usize) -> Result<Handle, NxResult> {
-    let res: NxResult;
-    let handle: Handle;
+    let mut res: NxResult = NxResult::new(0, 0);
+    let mut handle = Handle(0);
 
     unsafe {
         // llvm_asm!(
@@ -406,7 +406,7 @@ pub fn create_code_memory(address: usize, size: usize) -> Result<Handle, NxResul
 }
 
 pub fn control_code_memory(handle: Handle, op: CodeMapOperation, address: usize, size: usize, perm: MemoryPermission) -> Result<(), NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
 
     unsafe {
         // llvm_asm!(
@@ -431,7 +431,7 @@ pub fn control_code_memory(handle: Handle, op: CodeMapOperation, address: usize,
 }
 
 pub fn set_process_memory_permission(handle: Handle, address: usize, size: usize, perm: MemoryPermission) -> Result<(), NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
 
     unsafe {
         // llvm_asm!(
@@ -455,7 +455,7 @@ pub fn set_process_memory_permission(handle: Handle, address: usize, size: usize
 }
 
 pub fn map_process_code_memory(handle: Handle, dst_address: usize, src_address: usize, size: usize) -> Result<(), NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
 
     unsafe {
         // llvm_asm!(
@@ -479,7 +479,7 @@ pub fn map_process_code_memory(handle: Handle, dst_address: usize, src_address: 
 }
 
 pub fn unmap_process_code_memory(handle: Handle, dst_address: usize, src_address: usize, size: usize) -> Result<(), NxResult> {
-    let res: NxResult;
+    let mut res: NxResult = NxResult::new(0, 0);
 
     unsafe {
         // llvm_asm!(
