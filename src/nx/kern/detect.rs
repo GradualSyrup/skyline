@@ -21,7 +21,7 @@ fn detect_kernel_version() -> usize {
         /* Test if the InfoType is valid for kernel */
         .map(|&i| svc::get_info(i, Handle::INVALID, 0).err()) 
         /* Find the position of the first InfoType not recognized by the kernel */
-        .position(|opt| opt.contains(&kern::INVALID_ENUM_VALUE)) 
+        .position(|opt| opt == Some(kern::INVALID_ENUM_VALUE)) 
         /* If all succeeded, we are the latest version detected. */
         .unwrap_or(check_arr.len()) 
         /* One-based index */
@@ -43,7 +43,7 @@ fn detect_kernel_patch() -> bool {
         /* Clean up page allocated. */
         std::alloc::dealloc(heap, layout);
         /* This result will only be returned if there's a kernel patch allowing JIT. */
-        test.contains_err(&kern::INVALID_ENUM_VALUE)
+        test == Err(kern::INVALID_ENUM_VALUE)
     }
 }
 
