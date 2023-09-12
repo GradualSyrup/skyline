@@ -50,7 +50,7 @@ bitflags! {
 
 #[repr(C)]
 pub struct PageInfo {
-    flags: u32,
+    pub flags: u32,
 }
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq)]
