@@ -1,6 +1,6 @@
 #[derive(Eq, PartialEq, Debug, Copy, Clone)]
 #[repr(transparent)]
-pub struct NxResult(u32);
+pub struct NxResult(pub u32);
 
 const fn mask(bits: u32) -> u32 {
     (1 << bits) - 1

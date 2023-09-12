@@ -20,12 +20,18 @@ pub fn set_heap_size(size: usize) -> Result<usize, NxResult> {
     let out: usize;
 
     unsafe {
+        // llvm_asm!(
+        //     "
+        //     svc 0x1
+        //     "
+        //     :  "={W0}" (res), "={X1}"(out)
+        //     :  "{x1}" (size)
+        // );
         asm!(
-            "
-            svc 0x1
-            "
-            :  "={W0}" (res), "={X1}"(out)
-            :  "{x1}" (size)
+            "svc 0x1",
+            out("w0") res.0, // we can't actually pass NxResult as an argument for inline asm with the new macro
+            lateout("x1") out,
+            in("x1") size,
         );
     }
 
