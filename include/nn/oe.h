@@ -33,5 +33,6 @@ namespace oe {
     void FinishStartupLogo();
     nn::settings::LanguageCode GetDesiredLanguage();
     void GetDisplayVersion(DisplayVersion*);
+    void ReportUserIsActive();
 };  // namespace oe
 };  // namespace nn
